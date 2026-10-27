@@ -13,9 +13,6 @@ import CustomerManagementPage from "./pages/CustomerManagementPage";
 import ConsultationForm from "./pages/ConsultationForm";
 import MyConsultationsPage from "./pages/MyConsultationsPage";
 import ConsultationManagementPage from "./pages/ConsultationManagementPage";
-import TestDriveBookingPage from "./pages/TestDriveBookingPage";
-import MyTestDrivesPage from "./pages/MyTestDrivesPage";
-import TestDriveManagementPage from "./pages/TestDriveManagementPage";
 import OrderCreatePage from "./pages/OrderCreatePage";
 import MyOrdersPage from "./pages/MyOrdersPage";
 import OrderManagementPage from "./pages/OrderManagementPage";
@@ -24,6 +21,10 @@ import Footer from "./components/Footer";
 import HomePage from "./pages/HomePage";
 import ComparePage from "./pages/ComparePage";
 import DashboardPage from "./pages/DashboardPage";
+// Module 5: Lịch lái thử (Lê Tuấn Anh)
+import TestDriveBookingPage from './pages/TestDriveBookingPage';
+import MyTestDrivesPage from './pages/MyTestDrivesPage';
+import TestDriveManagementPage from './pages/TestDriveManagementPage';
 
 export default function App() {
   return (
@@ -120,7 +121,7 @@ export default function App() {
               </Guard>
             }
           />
-
+{/* Module 5: Lịch lái thử (Lê Tuấn Anh phụ trách) */}
           <Route
             path="/testdrives/new"
             element={
@@ -147,7 +148,7 @@ export default function App() {
               </Guard>
             }
           />
-
+{/* Module 5: Lịch lái thử (Lê Tuấn Anh phụ trách) */}
           <Route
             path="/orders/new"
             element={
