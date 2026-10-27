@@ -1,17 +1,17 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { storeRequest } from '../services/carStoreService';
-import CarCard from '../components/CarCard';
-import CarFilter from '../components/CarFilter';
-import { useCompare } from '../context/CompareContext';
-const empty = { q: '', brand: '', type: '', min: '', max: '', sort: 'default' };
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { storeRequest } from "../services/carStoreService";
+import CarCard from "../components/CarCard";
+import CarFilter from "../components/CarFilter";
+import { useCompare } from "../context/CompareContext";
+const empty = { q: "", brand: "", type: "", min: "", max: "", sort: "default" };
 export default function CarListPage() {
-    const [cars, setCars] = useState([]), [error, setError] = useState(''), [filter, setFilter] = useState(empty), [page, setPage] = useState(1);
+    const [cars, setCars] = useState([]), [error, setError] = useState(""), [filter, setFilter] = useState(empty), [page, setPage] = useState(1);
     const { ids } = useCompare();
-    useEffect(() => { storeRequest('cars').then(setCars).catch(e => setError(e.message)); }, []);
+    useEffect(() => { storeRequest("cars").then(setCars).catch(e => setError(e.message)); }, []);
     function change(next) { setFilter(next); setPage(1); }
-    const visible = cars.filter(c => c.active && (c.name + ' ' + c.code).toLowerCase().includes(filter.q.toLowerCase()) && (!filter.brand || c.brand_id === Number(filter.brand)) && (!filter.type || c.type_id === Number(filter.type)) && (!filter.min || c.price >= Number(filter.min)) && (!filter.max || c.price <= Number(filter.max)));
-    visible.sort((a, b) => filter.sort === 'priceAsc' ? a.price - b.price : filter.sort === 'priceDesc' ? b.price - a.price : filter.sort === 'yearDesc' ? b.year - a.year : filter.sort === 'name' ? a.name.localeCompare(b.name) : a.id - b.id);
+    const visible = cars.filter(c => c.active && (c.name + " " + c.code).toLowerCase().includes(filter.q.toLowerCase()) && (!filter.brand || c.brand_id === Number(filter.brand)) && (!filter.type || c.type_id === Number(filter.type)) && (!filter.min || c.price >= Number(filter.min)) && (!filter.max || c.price <= Number(filter.max)));
+    visible.sort((a, b) => filter.sort === "priceAsc" ? a.price - b.price : filter.sort === "priceDesc" ? b.price - a.price : filter.sort === "yearDesc" ? b.year - a.year : filter.sort === "name" ? a.name.localeCompare(b.name) : a.id - b.id);
     const total = Math.max(1, Math.ceil(visible.length / 9));
     return <>
         <div className="page-heading"><div><p className="eyebrow">BỘ SƯU TẬP CARSTORE</p><h1>Chọn chiếc xe của bạn</h1><p>Khám phá {cars.filter(c => c.active).length} mẫu xe từ bộ ảnh Porsche.</p></div><Link className="button secondary" to="/compare">So sánh xe ({ids.length})</Link></div>
