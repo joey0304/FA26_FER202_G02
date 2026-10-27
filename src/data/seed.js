@@ -583,4 +583,90 @@ const initialData={
   "testdrives": [],
   "orders": []
 };
-export function createSeed(){return JSON.parse(JSON.stringify(initialData));}
+function dateOffset(days) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function createSampleTestDrives(cars) {
+  const slots = [
+    "08:30 - 09:30",
+    "10:00 - 11:00",
+    "14:00 - 15:00",
+    "15:30 - 16:30",
+  ];
+  const statuses = [
+    "Chờ xác nhận",
+    "Đã xác nhận",
+    "Đã hoàn thành",
+    "Đã hủy",
+  ];
+  const notes = [
+    "Muốn trải nghiệm khả năng tăng tốc và độ ổn định.",
+    "Quan tâm đến độ êm ái khi di chuyển trong thành phố.",
+    "Muốn tìm hiểu chế độ lái và hệ thống hỗ trợ người lái.",
+    "Khách đề nghị chuẩn bị xe và tư vấn thông số trước buổi hẹn.",
+    "Muốn trải nghiệm xe cùng người thân.",
+    "Đã trao đổi với nhân viên về cấu hình và trang bị.",
+  ];
+  const resultNotes = [
+    "Khách hài lòng với cảm giác lái và đang cân nhắc đặt mua.",
+    "Đã tư vấn thêm về trang bị; khách sẽ liên hệ lại sau.",
+    "Khách đánh giá cao khả năng vận hành và độ hoàn thiện.",
+  ];
+  const eligibleCars = cars.filter(
+    (car) => car.active === 1 && car.test_drive === 1,
+  );
+  const testDrives = eligibleCars.map((car, index) => {
+    const status = statuses[index % statuses.length];
+    const date =
+      status === "Đã hoàn thành"
+        ? dateOffset(-1 - (index % 12))
+        : dateOffset(3 + (index % 20));
+    const timeSlot = slots[index % slots.length];
+    const isCompleted = status === "Đã hoàn thành";
+
+    return {
+      id: `TD-SEED-${String(index + 1).padStart(3, "0")}`,
+      userId: 3,
+      customerName: "Khách hàng mẫu",
+      phone: "0900000003",
+      carId: car.id,
+      carName: car.name,
+      carImage: car.image,
+      date,
+      timeSlot,
+      slot: `${date} (${timeSlot})`,
+      note: notes[index % notes.length],
+      status,
+      resultNote: isCompleted
+        ? resultNotes[index % resultNotes.length]
+        : "",
+      createdAt: new Date(
+        `${date}T${isCompleted ? "09:00:00" : "08:00:00"}`,
+      ).toISOString(),
+    };
+  });
+
+  // Tạo một cặp lịch chờ và đã xác nhận cùng khung giờ để kiểm tra xung đột.
+  const firstAppointment = testDrives[0];
+  if (firstAppointment) {
+    testDrives.push({
+      ...firstAppointment,
+      id: "TD-SEED-CONFLICT",
+      status: "Đã xác nhận",
+      note: "Lịch mẫu xác nhận để kiểm tra trường hợp trùng khung giờ.",
+      resultNote: "",
+    });
+  }
+
+  return testDrives;
+}
+
+export function createSeed() {
+  const data = JSON.parse(JSON.stringify(initialData));
+  data.testdrives = createSampleTestDrives(data.cars);
+  return data;
+}
