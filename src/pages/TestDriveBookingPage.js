@@ -13,16 +13,20 @@ import {
 } from "../services/testDriveService";
 
 export default function TestDriveBookingPage() {
+  // Lấy phiên đăng nhập, tham số xe từ URL và hàm điều hướng sau khi đặt lịch.
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
+  // Hỗ trợ cả hai dạng liên kết cũ và mới: ?carId=... hoặc ?car=...
   const queryCarId = searchParams.get("carId") || searchParams.get("car") || "";
 
+  // Lưu danh sách xe, lịch hiện có và xe đang được chọn trong form.
   const [cars, setCars] = useState([]);
   const [testDrives, setTestDrives] = useState([]);
   const [selectedCar, setSelectedCar] = useState(null);
 
+  // Khởi tạo thông tin liên hệ từ tài khoản nếu người dùng đã đăng nhập.
   const [formData, setFormData] = useState({
     carId: queryCarId,
     customerName: user?.name || "",
@@ -36,6 +40,7 @@ export default function TestDriveBookingPage() {
   const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Nạp dữ liệu xe và lịch; nếu URL có mã xe hợp lệ thì chọn sẵn xe đó.
   useEffect(() => {
     try {
       const seedData = createSeed();
@@ -58,6 +63,7 @@ export default function TestDriveBookingPage() {
     }
   }, [queryCarId]);
 
+  // Điền tên và số điện thoại sau khi thông tin phiên đăng nhập sẵn sàng.
   useEffect(() => {
     if (user) {
       setFormData((prev) => ({
@@ -68,6 +74,7 @@ export default function TestDriveBookingPage() {
     }
   }, [user]);
 
+  // Đồng bộ xe được chọn trên giao diện với dữ liệu form.
   const handleCarChange = (e) => {
     const cid = e.target.value;
     const found = cars.find((c) => String(c.id) === String(cid));
@@ -75,6 +82,7 @@ export default function TestDriveBookingPage() {
     setFormData((prev) => ({ ...prev, carId: cid }));
   };
 
+  // Kiểm tra dữ liệu, ngăn đặt trùng lịch đã xác nhận rồi lưu lịch mới.
   const handleSubmit = (e) => {
     e.preventDefault();
     setError("");
@@ -85,6 +93,7 @@ export default function TestDriveBookingPage() {
       return;
     }
 
+    // Service kiểm tra xe hợp lệ, thông tin liên hệ, ngày tương lai và khung giờ.
     const validationError = validateTestDriveDetails({
       car: selectedCar,
       ...formData,
@@ -94,7 +103,7 @@ export default function TestDriveBookingPage() {
       return;
     }
 
-    // Business Rule 3: Mỗi xe chỉ nhận 1 lịch đã xác nhận trong cùng khung giờ
+    // Mỗi xe chỉ có thể có một lịch đã xác nhận ở cùng ngày và khung giờ.
     if (
       hasConfirmedTestDriveConflict(testDrives, {
         carId: selectedCar.id,
@@ -108,6 +117,7 @@ export default function TestDriveBookingPage() {
 
     setIsSubmitting(true);
 
+    // Tạo bản ghi theo cấu trúc được các trang cá nhân và quản lý sử dụng.
     const newTestDrive = {
       id: `TD${Date.now()}`,
       userId: user?.id || "guest",
@@ -126,6 +136,7 @@ export default function TestDriveBookingPage() {
     };
 
     try {
+      // Lưu lịch mới lên đầu danh sách và chuyển khách sang trang theo dõi.
       const updatedList = [newTestDrive, ...testDrives];
       saveTestDrives(updatedList);
       setTestDrives(updatedList);
@@ -138,10 +149,12 @@ export default function TestDriveBookingPage() {
     }
   };
 
+  // Chỉ hiển thị xe đang kinh doanh và được bật chức năng lái thử.
   const testDriveCars = cars.filter(isTestDriveEligibleCar);
 
   return (
     <div>
+      {/* Tiêu đề trang và lối tắt đến danh sách lịch cá nhân. */}
       <div className="page-heading">
         <div>
           <span className="eyebrow">Module 5 • Trải nghiệm thực tế</span>
@@ -153,7 +166,9 @@ export default function TestDriveBookingPage() {
         </Link>
       </div>
 
+      {/* Bố cục gồm phần xem trước xe và form đăng ký lịch lái thử. */}
       <div className="booking-layout">
+        {/* Thông tin xe thay đổi theo lựa chọn của khách hàng. */}
         <div className="panel car-summary">
           <span className="eyebrow">Mẫu xe trải nghiệm</span>
           {selectedCar ? (
@@ -179,6 +194,7 @@ export default function TestDriveBookingPage() {
           )}
         </div>
 
+        {/* Form đặt lịch; thông báo lỗi/thành công hiển thị ngay phía trên. */}
         <div className="panel">
           <span className="eyebrow">Thông tin cuộc hẹn</span>
           <h2>Chi tiết đặt lịch</h2>
