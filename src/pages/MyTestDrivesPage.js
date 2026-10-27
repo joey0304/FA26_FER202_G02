@@ -1,138 +1,94 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { createSeed } from '../data/seed';
-
-const TIME_SLOTS = [
-  '08:30 - 09:30',
-  '10:00 - 11:00',
-  '14:00 - 15:00',
-  '15:30 - 16:30'
-];
-
-const DB_KEY = 'carstore_lab_db';
-const TD_KEY = 'testdrives';
-
-function getStorageData(key, fallback = []) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (raw) return JSON.parse(raw);
-    const dbRaw = localStorage.getItem(DB_KEY);
-    if (dbRaw) {
-      const db = JSON.parse(dbRaw);
-      if (Array.isArray(db[key])) return db[key];
-    }
-  } catch (err) {
-    console.error(err);
-  }
-  return fallback;
-}
-
-function saveTestDrives(list) {
-  try {
-    localStorage.setItem(TD_KEY, JSON.stringify(list));
-    const dbRaw = localStorage.getItem(DB_KEY);
-    if (dbRaw) {
-      const db = JSON.parse(dbRaw);
-      db.testdrives = list;
-      localStorage.setItem(DB_KEY, JSON.stringify(db));
-    }
-  } catch (err) {
-    console.error(err);
-  }
-}
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { createSeed } from "../data/seed";
+import {
+  canCancelTestDrive,
+  canDeleteTestDrive,
+  canRescheduleTestDrive,
+  getTestDrivesForUser,
+  getTestDriveStatusLabel,
+  hasConfirmedTestDriveConflict,
+  isFutureDate,
+  loadTestDrives,
+  normalizeTestDriveStatus,
+  saveTestDrives,
+  TEST_DRIVE_TIME_SLOTS,
+} from "../services/testDriveService";
 
 function renderStatusBadge(status) {
-  switch (status) {
-    case 'Chờ xác nhận':
-    case 'pending':
-    case 'Mới':
-      return <span className="status pending">{status}</span>;
-    case 'Đã xác nhận':
-    case 'confirmed':
-      return <span className="status confirmed">{status}</span>;
-    case 'Đã hoàn thành':
-    case 'completed':
-      return <span className="status completed">{status}</span>;
-    case 'Đã hủy':
-    case 'cancelled':
-      return <span className="status cancelled">{status}</span>;
-    default:
-      return <span className="status">{status}</span>;
-  }
+  const normalized = normalizeTestDriveStatus(status);
+  return (
+    <span className={`status ${normalized}`}>
+      {getTestDriveStatusLabel(status)}
+    </span>
+  );
 }
 
 export default function MyTestDrivesPage() {
   const { user } = useAuth();
   const [allTestDrives, setAllTestDrives] = useState([]);
-  const [filterStatus, setFilterStatus] = useState('ALL');
-  const [message, setMessage] = useState({ type: '', text: '' });
+  const [filterStatus, setFilterStatus] = useState("ALL");
+  const [message, setMessage] = useState({ type: "", text: "" });
 
   const [editingItem, setEditingItem] = useState(null);
-  const [editForm, setEditForm] = useState({ date: '', timeSlot: TIME_SLOTS[0], note: '' });
+  const [editForm, setEditForm] = useState({ date: "", timeSlot: TEST_DRIVE_TIME_SLOTS[0], note: "" });
 
   useEffect(() => {
-    const seedData = createSeed();
-    const data = getStorageData(TD_KEY, seedData.testdrives || []);
-    setAllTestDrives(data);
+    try {
+      const seedData = createSeed();
+      setAllTestDrives(loadTestDrives(seedData.testdrives || []));
+    } catch (storageError) {
+      setMessage({ type: "error", text: storageError.message });
+    }
   }, []);
 
   // Business Rule 4: Khách hàng chỉ xem lịch của chính mình
-  const myList = allTestDrives.filter((item) => {
-    if (!user?.id) return true;
-    return String(item.userId) === String(user.id);
-  });
+  const myList = getTestDrivesForUser(allTestDrives, user?.id);
 
   const filteredList = myList.filter((item) => {
-    if (filterStatus === 'ALL') return true;
-    return item.status === filterStatus;
+    if (filterStatus === "ALL") return true;
+    return normalizeTestDriveStatus(item.status) === filterStatus;
   });
 
   const handleStartEdit = (item) => {
-    // Business Rule 5: Lịch hoàn thành không được chỉnh sửa
-    if (item.status === 'Đã hoàn thành' || item.status === 'completed') {
-      setMessage({ type: 'error', text: 'Lịch lái thử đã hoàn tất không thể chỉnh sửa!' });
-      return;
-    }
-    if (item.status !== 'Chờ xác nhận' && item.status !== 'pending' && item.status !== 'Mới') {
-      setMessage({ type: 'error', text: 'Chỉ có thể đổi lịch khi yêu cầu đang ở trạng thái "Chờ xác nhận"!' });
+    if (!canRescheduleTestDrive(item)) {
+      setMessage({ type: "error", text: "Chỉ có thể đổi lịch khi yêu cầu đang ở trạng thái \"Chờ xác nhận\"!" });
       return;
     }
 
     setEditingItem(item);
     setEditForm({
-      date: item.date || '',
-      timeSlot: item.timeSlot || TIME_SLOTS[0],
-      note: item.note || ''
+      date: item.date || "",
+      timeSlot: item.timeSlot || TEST_DRIVE_TIME_SLOTS[0],
+      note: item.note || ""
     });
-    setMessage({ type: '', text: '' });
+    setMessage({ type: "", text: "" });
   };
 
   const handleSaveEdit = (e) => {
     e.preventDefault();
 
     // Business Rule 1: Ngày mới phải ở tương lai
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const chosen = new Date(editForm.date);
-    chosen.setHours(0, 0, 0, 0);
-
-    if (chosen <= today) {
-      setMessage({ type: 'error', text: 'Ngày đổi lịch lái thử phải ở tương lai (bắt đầu từ ngày mai)!' });
+    if (!isFutureDate(editForm.date)) {
+      setMessage({ type: "error", text: "Ngày đổi lịch lái thử phải ở tương lai (bắt đầu từ ngày mai)!" });
+      return;
+    }
+    if (!TEST_DRIVE_TIME_SLOTS.includes(editForm.timeSlot)) {
+      setMessage({ type: "error", text: "Khung giờ được chọn không hợp lệ." });
       return;
     }
 
     // Business Rule 3: Tránh xung đột với lịch đã xác nhận khác của cùng xe
-    const conflict = allTestDrives.some(
-      (td) => td.id !== editingItem.id &&
-              String(td.carId) === String(editingItem.carId) &&
-              td.date === editForm.date &&
-              td.timeSlot === editForm.timeSlot &&
-              (td.status === 'Đã xác nhận' || td.status === 'confirmed')
-    );
+    const conflict = hasConfirmedTestDriveConflict(allTestDrives, {
+      carId: editingItem.carId ?? editingItem.car_id,
+      date: editForm.date,
+      timeSlot: editForm.timeSlot,
+      id: editingItem.id,
+    });
     if (conflict) {
       setMessage({
-        type: 'error',
+        type: "error",
         text: `Mẫu xe này đã có một lịch "Đã xác nhận" vào ngày ${editForm.date} khung giờ (${editForm.timeSlot}). Vui lòng chọn giờ khác!`
       });
       return;
@@ -150,36 +106,41 @@ export default function MyTestDrivesPage() {
         : td
     );
 
-    saveTestDrives(updated);
-    setAllTestDrives(updated);
-    setEditingItem(null);
-    setMessage({ type: 'success', text: 'Cập nhật thay đổi lịch hẹn lái thử thành công!' });
+    try {
+      saveTestDrives(updated);
+      setAllTestDrives(updated);
+      setEditingItem(null);
+      setMessage({ type: "success", text: "Cập nhật thay đổi lịch hẹn lái thử thành công!" });
+    } catch (storageError) {
+      setMessage({ type: "error", text: storageError.message });
+    }
   };
 
   const handleDeleteOrCancel = (item) => {
-    // Business Rule 5: Lịch hoàn thành không được xóa/hủy
-    if (item.status === 'Đã hoàn thành' || item.status === 'completed') {
-      setMessage({ type: 'error', text: 'Lịch lái thử đã hoàn tất không thể xóa hoặc hủy!' });
-      return;
-    }
-
-    const isPending = item.status === 'Chờ xác nhận' || item.status === 'pending' || item.status === 'Mới';
-    const isConfirmed = item.status === 'Đã xác nhận' || item.status === 'confirmed';
-
-    if (isPending) {
+    if (canDeleteTestDrive(item)) {
       if (!window.confirm(`Bạn có chắc chắn muốn xóa yêu cầu lái thử mã #${item.id}?`)) return;
       const updated = allTestDrives.filter((td) => td.id !== item.id);
-      saveTestDrives(updated);
-      setAllTestDrives(updated);
-      setMessage({ type: 'success', text: `Đã xóa yêu cầu lái thử #${item.id} thành công.` });
-    } else if (isConfirmed) {
-      if (!window.confirm('Lịch này đã được cửa hàng xác nhận. Bạn có chắc muốn HỦY lịch hẹn này không?')) return;
+      try {
+        saveTestDrives(updated);
+        setAllTestDrives(updated);
+        setMessage({ type: "success", text: `Đã xóa yêu cầu lái thử #${item.id} thành công.` });
+      } catch (storageError) {
+        setMessage({ type: "error", text: storageError.message });
+      }
+    } else if (canCancelTestDrive(item)) {
+      if (!window.confirm("Lịch này đã được cửa hàng xác nhận. Bạn có chắc muốn HỦY lịch hẹn này không?")) return;
       const updated = allTestDrives.map((td) =>
-        td.id === item.id ? { ...td, status: 'Đã hủy' } : td
+        td.id === item.id ? { ...td, status: "Đã hủy" } : td
       );
-      saveTestDrives(updated);
-      setAllTestDrives(updated);
-      setMessage({ type: 'success', text: `Đã hủy lịch lái thử #${item.id} thành công.` });
+      try {
+        saveTestDrives(updated);
+        setAllTestDrives(updated);
+        setMessage({ type: "success", text: `Đã hủy lịch lái thử #${item.id} thành công.` });
+      } catch (storageError) {
+        setMessage({ type: "error", text: storageError.message });
+      }
+    } else {
+      setMessage({ type: "error", text: "Lịch đã hoàn thành hoặc đã hủy không thể thay đổi." });
     }
   };
 
@@ -191,17 +152,17 @@ export default function MyTestDrivesPage() {
           <h1>Lịch Lái Thử Của Tôi</h1>
           <p>Theo dõi tiến trình tiếp nhận, đổi ngày giờ hoặc hủy lịch lái thử đã đăng ký.</p>
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
           <select
-            style={{ width: 'auto', margin: 0 }}
+            style={{ width: "auto", margin: 0 }}
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
           >
             <option value="ALL">-- Tất cả trạng thái ({myList.length}) --</option>
-            <option value="Chờ xác nhận">Chờ xác nhận</option>
-            <option value="Đã xác nhận">Đã xác nhận</option>
-            <option value="Đã hoàn thành">Đã hoàn thành</option>
-            <option value="Đã hủy">Đã hủy</option>
+            <option value="pending">Chờ xác nhận</option>
+            <option value="confirmed">Đã xác nhận</option>
+            <option value="completed">Đã hoàn thành</option>
+            <option value="cancelled">Đã hủy</option>
           </select>
           <Link to="/testdrives/new" className="button">
             + Đặt Lịch Mới
@@ -212,7 +173,7 @@ export default function MyTestDrivesPage() {
       {message.text && <div className={message.type}>{message.text}</div>}
 
       {editingItem && (
-        <div className="panel edit-form" style={{ marginBottom: '24px' }}>
+        <div className="panel edit-form" style={{ marginBottom: "24px" }}>
           <span className="eyebrow">Chỉnh sửa cuộc hẹn</span>
           <h2>Đổi Lịch Lái Thử: {editingItem.carName}</h2>
           <form onSubmit={handleSaveEdit}>
@@ -234,7 +195,7 @@ export default function MyTestDrivesPage() {
                   onChange={(e) => setEditForm({ ...editForm, timeSlot: e.target.value })}
                   required
                 >
-                  {TIME_SLOTS.map((s) => (
+                  {TEST_DRIVE_TIME_SLOTS.map((s) => (
                     <option key={s} value={s}>
                       {s}
                     </option>
@@ -253,7 +214,7 @@ export default function MyTestDrivesPage() {
               />
             </label>
 
-            <div style={{ display: 'flex', gap: '10px', marginTop: '14px' }}>
+            <div style={{ display: "flex", gap: "10px", marginTop: "14px" }}>
               <button type="submit">Lưu Thay Đổi</button>
               <button
                 type="button"
@@ -277,35 +238,35 @@ export default function MyTestDrivesPage() {
               <th>Ghi chú của bạn</th>
               <th>Trạng thái</th>
               <th>Kết quả buổi lái thử</th>
-              <th style={{ textAlign: 'right' }}>Thao tác</th>
+              <th style={{ textAlign: "right" }}>Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {filteredList.length === 0 ? (
               <tr>
-                <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                <td colSpan="7" style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>
                   Không tìm thấy lịch hẹn lái thử nào của bạn.
                 </td>
               </tr>
             ) : (
               filteredList.map((item) => {
-                const isPending = item.status === 'Chờ xác nhận' || item.status === 'pending' || item.status === 'Mới';
-                const isConfirmed = item.status === 'Đã xác nhận' || item.status === 'confirmed';
-                const isLocked = item.status === 'Đã hoàn thành' || item.status === 'completed' || item.status === 'Đã hủy';
+                const isPending = canRescheduleTestDrive(item);
+                const isConfirmed = canCancelTestDrive(item);
+                const isLocked = !isPending && !isConfirmed;
 
                 return (
                   <tr key={item.id}>
                     <td>
-                      <strong style={{ color: 'var(--accent-gold)' }}>#{item.id}</strong>
+                      <strong style={{ color: "var(--accent-gold)" }}>#{item.id}</strong>
                     </td>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                         {item.carImage && (
                           <img
                             src={item.carImage}
                             alt=""
                             className="table-car"
-                            style={{ width: '50px', height: '35px' }}
+                            style={{ width: "50px", height: "35px" }}
                           />
                         )}
                         <strong>{item.carName || item.carId}</strong>
@@ -316,7 +277,7 @@ export default function MyTestDrivesPage() {
                       <small className="muted">{item.timeSlot || item.slot}</small>
                     </td>
                     <td>{item.note || <span className="muted">-</span>}</td>
-                    <td>{renderStatusBadge(item.status || 'Chờ xác nhận')}</td>
+                    <td>{renderStatusBadge(item.status || "Chờ xác nhận")}</td>
                     <td>
                       {item.resultNote ? (
                         <span>{item.resultNote}</span>
@@ -324,8 +285,8 @@ export default function MyTestDrivesPage() {
                         <small className="muted">Chưa có kết quả từ showroom</small>
                       )}
                     </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div className="row-actions" style={{ justifyContent: 'flex-end' }}>
+                    <td style={{ textAlign: "right" }}>
+                      <div className="row-actions" style={{ justifyContent: "flex-end" }}>
                         {isPending && (
                           <>
                             <button
