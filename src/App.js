@@ -1,29 +1,30 @@
-import './App.css';
-import { Link, Route, Routes } from 'react-router-dom';
-import Guard from './components/Guard';
-import CarListPage from './pages/CarListPage';
-import CarDetailPage from './pages/CarDetailPage';
-import CarManagementPage from './pages/CarManagementPage';
-import BrandManagementPage from './pages/BrandManagementPage';
-import VehicleTypeManagementPage from './pages/VehicleTypeManagementPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import ProfilePage from './pages/ProfilePage';
-import CustomerManagementPage from './pages/CustomerManagementPage';
-import ConsultationForm from './pages/ConsultationForm';
-import MyConsultationsPage from './pages/MyConsultationsPage';
-import ConsultationManagementPage from './pages/ConsultationManagementPage';
+import "./App.css";
+import { Link, Route, Routes } from "react-router-dom";
+import Guard from "./components/Guard";
+import CarListPage from "./pages/CarListPage";
+import CarDetailPage from "./pages/CarDetailPage";
+import CarManagementPage from "./pages/CarManagementPage";
+import BrandManagementPage from "./pages/BrandManagementPage";
+import VehicleTypeManagementPage from "./pages/VehicleTypeManagementPage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import ProfilePage from "./pages/ProfilePage";
+import CustomerManagementPage from "./pages/CustomerManagementPage";
+import ConsultationForm from "./pages/ConsultationForm";
+import MyConsultationsPage from "./pages/MyConsultationsPage";
+import ConsultationManagementPage from "./pages/ConsultationManagementPage";
+import OrderCreatePage from "./pages/OrderCreatePage";
+import MyOrdersPage from "./pages/MyOrdersPage";
+import OrderManagementPage from "./pages/OrderManagementPage";
+import AppNavbar from "./components/AppNavbar";
+import Footer from "./components/Footer";
+import HomePage from "./pages/HomePage";
+import ComparePage from "./pages/ComparePage";
+import DashboardPage from "./pages/DashboardPage";
+// Module 5: Lịch lái thử (Lê Tuấn Anh)
 import TestDriveBookingPage from './pages/TestDriveBookingPage';
 import MyTestDrivesPage from './pages/MyTestDrivesPage';
 import TestDriveManagementPage from './pages/TestDriveManagementPage';
-import OrderCreatePage from './pages/OrderCreatePage';
-import MyOrdersPage from './pages/MyOrdersPage';
-import OrderManagementPage from './pages/OrderManagementPage';
-import AppNavbar from './components/AppNavbar';
-import Footer from './components/Footer';
-import HomePage from './pages/HomePage';
-import ComparePage from './pages/ComparePage';
-import DashboardPage from './pages/DashboardPage';
 
 export default function App() {
   return (
@@ -120,7 +121,7 @@ export default function App() {
               </Guard>
             }
           />
-
+{/* Module 5: Lịch lái thử (Lê Tuấn Anh phụ trách) */}
           <Route
             path="/testdrives/new"
             element={
@@ -147,7 +148,7 @@ export default function App() {
               </Guard>
             }
           />
-
+{/* Module 5: Lịch lái thử (Lê Tuấn Anh phụ trách) */}
           <Route
             path="/orders/new"
             element={
