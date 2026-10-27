@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { createSeed } from '../seed';
+import { createSeed } from '../data/seed';
 
 const TIME_SLOTS = [
   '08:30 - 09:30',

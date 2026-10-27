@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { createSeed } from "../seed";
+import { createSeed } from "../data/seed";
 
 const TIME_SLOTS = [
   "08:30 - 09:30",
@@ -47,7 +47,7 @@ export default function TestDriveBookingPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const queryCarId = searchParams.get("carId") || "";
+  const queryCarId = searchParams.get("carId") || searchParams.get("car") || "";
 
   const [cars, setCars] = useState([]);
   const [testDrives, setTestDrives] = useState([]);

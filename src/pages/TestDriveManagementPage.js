@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createSeed } from '../seed';
+import { createSeed } from '../data/seed';
 
 const DB_KEY = 'carstore_lab_db';
 const TD_KEY = 'testdrives';
