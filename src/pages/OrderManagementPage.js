@@ -1,6 +1,3 @@
-import RequestList from '../components/RequestList';
-
-export default function OrderManagementPage(){return <RequestList resource="orders" title="Quản lý đơn đặt mua" manage/>;}
 import { useEffect, useMemo, useState } from "react";
 import { createSeed } from "../data/seed";
 import { loadCars } from "../services/testDriveService";

@@ -1,6 +1,3 @@
-import RequestCreate from '../components/RequestCreate';
-
-export default function OrderCreatePage(){return <RequestCreate resource="orders" title="Tạo đơn đặt mua" extra={null}/>;}
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
