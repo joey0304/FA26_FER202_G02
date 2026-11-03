@@ -1,0 +1,9 @@
+
+{
+    "short_name": "CarStore",
+    "name": "CarStore FER",
+    "start_url": ".",
+    "display": "standalone",
+    "theme_color": "#102d3b",
+    "background_color": "#f3f5f7"
+}
