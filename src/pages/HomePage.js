@@ -4,16 +4,12 @@ import { storeRequest } from '../services/carStoreService';
 import CarCard from '../components/CarCard';
 
 export default function HomePage() {
-    // State lưu trữ danh sách 6 xe nổi bật và thông báo lỗi API (nếu có)
     const [cars, setCars] = useState([]);
     const [error, setError] = useState('');
 
-    // Gọi API lấy dữ liệu xe khi Trang chủ được mount lần đầu
     useEffect(() => {
-        // Lấy toàn bộ danh mục xe từ endpoint 'cars'
         storeRequest('cars')
             .then(rows =>
-                // Lọc xe đang hoạt động (active), sắp xếp theo ID và lấy 6 xe đầu làm nổi bật
                 setCars(
                     rows
                         .filter(c => c.active)
@@ -26,7 +22,6 @@ export default function HomePage() {
 
     return (
         <>
-            {/* 1. Phần Hero Banner giới thiệu thương hiệu */}
             <section className="hero">
                 <img
                     className="hero-image"
@@ -53,7 +48,6 @@ export default function HomePage() {
                     </p>
 
                     <div className="actions">
-                        {/* Nút điều hướng sang trang danh sách xe (/cars) */}
                         <Link
                             className="button light"
                             to="/cars"
@@ -61,7 +55,6 @@ export default function HomePage() {
                             Khám phá bộ sưu tập →
                         </Link>
 
-                        {/* Nút điều hướng sang trang đặt lịch lái thử (/testdrives/new) */}
                         <Link
                             className="button outline"
                             to="/testdrives/new"
@@ -72,7 +65,6 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* 2. Thống kê nhanh về quy mô bộ sưu tập */}
             <div className="intro-strip">
                 <div>
                     <strong>30</strong>
@@ -90,7 +82,6 @@ export default function HomePage() {
                 </div>
             </div>
 
-            {/* 3. Khu vực hiển thị danh sách xe nổi bật */}
             <section>
                 <div className="page-heading">
                     <div>
@@ -103,20 +94,17 @@ export default function HomePage() {
                         </h2>
                     </div>
 
-                    {/* Điều hướng xem toàn bộ kho xe (/cars) */}
                     <Link to="/cars">
                         Xem toàn bộ xe →
                     </Link>
                 </div>
 
-                {/* Hiển thị thông báo lỗi nếu fetch API thất bại */}
                 {error && (
                     <p className="error" role="alert">
                         {error}
                     </p>
                 )}
 
-                {/* Map từ state 'cars' (6 xe) render ra từng CarCard */}
                 <div className="car-grid">
                     {cars.map(c => (
                         <CarCard
@@ -128,9 +116,7 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* 4. Khối dịch vụ nhanh - Điều hướng sang các chức năng chính */}
             <section className="service-grid">
-                {/* Điều hướng sang trang So sánh xe (/compare) */}
                 <Link to="/compare">
                     <span>
                         01 / KHÁM PHÁ
@@ -146,7 +132,6 @@ export default function HomePage() {
                     </p>
                 </Link>
 
-                {/* Điều hướng sang trang Đăng ký tư vấn (/consultations/new) */}
                 <Link to="/consultations/new">
                     <span>
                         02 / KẾT NỐI
@@ -162,7 +147,6 @@ export default function HomePage() {
                     </p>
                 </Link>
 
-                {/* Điều hướng sang trang Đặt lịch lái thử (/testdrives/new) */}
                 <Link to="/testdrives/new">
                     <span>
                         03 / TRẢI NGHIỆM
